@@ -1,0 +1,29 @@
+# Runs the .NET Framework-only Razor formatting tests (WebTools validation) for a PR branch.
+# Lives only on ci/razor-* branches of this fork; never part of a PR.
+name: razor-windows-tests
+on:
+  push:
+    branches: ['ci/razor-*']
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Test
+        shell: pwsh
+        run: |
+          dotnet test src/Razor/src/Razor/test/Microsoft.VisualStudio.LanguageServices.Razor.UnitTests `
+            -c Debug `
+            --filter "FullyQualifiedName~RazorLSPTextViewConnectionListenerTest" `
+            --logger "trx;LogFileName=results.trx" `
+            --logger "console;verbosity=normal" `
+            --results-directory artifacts/ci-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: results
+          path: artifacts/ci-results

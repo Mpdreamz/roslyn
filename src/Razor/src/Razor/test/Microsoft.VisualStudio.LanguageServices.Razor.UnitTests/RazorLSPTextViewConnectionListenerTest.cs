@@ -84,6 +84,7 @@ public class RazorLSPTextViewConnectionListenerTest(ITestOutputHelper testOutput
             {
                 languagePreferences[0].fInsertTabs = 1;
                 languagePreferences[0].uTabSize = 8;
+                languagePreferences[0].uIndentSize = 2;
                 languagePreferences[0].fAutoListMembers = 1;
                 languagePreferences[0].fAutoListParams = 1;
             })
