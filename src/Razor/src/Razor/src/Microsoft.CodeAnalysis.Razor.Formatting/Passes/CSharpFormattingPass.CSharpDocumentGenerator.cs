@@ -423,20 +423,17 @@ internal partial class CSharpFormattingPass
                 // This is only removed from the generated C# indentation. Unlike additionalIndentation, it must not be
                 // passed through LineInfo and reapplied because Roslyn recreates the containing tag indentation structurally.
                 var startTagIndentationWidth = 0;
-                // Roslyn keeps a block lambda's body where it is relative to the line the lambda starts on. When that's
-                // the start tag's line, the body is indented from the tag, like an ordinary expression's continuation lines.
-                var blockLambdaStartsOnStartTagLine = false;
                 var attributeNode = node.Ancestors().FirstOrDefault(n => n.IsAnyAttributeSyntax())
                     ?? (previousLineStartedWithAttributeName ? previousTokenParent?.Parent : null);
                 if (attributeNode?.Parent is BaseMarkupStartTagSyntax attributeStartTag)
                 {
                     GetAttributeIndentation(attributeStartTag, out htmlIndentLevel, out var attributeAdditionalIndentation);
                     additionalIndentation = attributeAdditionalIndentation;
-                    blockLambdaStartsOnStartTagLine = expressionStartsBlockLambda && nodeStartLine == GetLineNumber(attributeStartTag.Name);
                     // A leading '[' identifies a collection expression. Roslyn preserves its continuation indentation,
                     // so unlike ordinary expressions we must not subtract the start tag indentation.
-                    if ((!expressionStartsBlockLambda || blockLambdaStartsOnStartTagLine) &&
-                        _sourceText[node.SpanStart] != '[')
+                    // Block lambdas are no exception: Roslyn keeps a block lambda's body where it is relative to the line the
+                    // lambda starts on, and that line is indented from the start tag like any other attribute line.
+                    if (_sourceText[node.SpanStart] != '[')
                     {
                         startTagIndentationWidth = _sourceText.Lines[GetLineNumber(attributeStartTag.Name)].GetIndentationSize(_tabSize);
                         if (ElementCausesIndentation(attributeStartTag))
@@ -451,19 +448,6 @@ internal partial class CSharpFormattingPass
                 // any indentation we want to add to line up attribute content, otherwise we'd end up pushing that content to
                 // the right repeatedly.
                 var attributeIndentationWidth = startTagIndentationWidth + (htmlIndentLevel * _indentSize) + additionalIndentation.GetValueOrDefault();
-
-                // For lambda attributes like `OnClick=@(() => ...)`, Roslyn already contributes the
-                // lambda-body indentation on wrapped lines. If we keep applying the full attribute
-                // indentation baseline to those continuation lines, every format pass shifts the block
-                // body one level to the right.
-                if (expressionStartsBlockLambda &&
-                    !blockLambdaStartsOnStartTagLine &&
-                    attributeNode is MarkupAttributeBlockSyntax or MarkupTagHelperAttributeSyntax &&
-                    _currentLine.LineNumber > nodeStartLine &&
-                    htmlIndentLevel > 0)
-                {
-                    htmlIndentLevel--;
-                }
 
                 if (attributeIndentationWidth <= 0)
                 {

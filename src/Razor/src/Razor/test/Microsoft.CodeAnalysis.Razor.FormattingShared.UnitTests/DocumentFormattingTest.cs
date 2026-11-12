@@ -15325,6 +15325,180 @@ public class DocumentFormattingTest(ITestOutputHelper testOutput) : DocumentForm
     }
 
     [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86440")]
+    public async Task FormatEventHandlerAttributes_BlockBodiedLambda2_DoesNotMoveWhenFormatted()
+    {
+        // The output of FormatEventHandlerAttributes_BlockBodiedLambda2, formatted again
+        var code = """
+            <button foo="bar"
+                    @onclick="() =>
+                    {
+                        StateHasChanged();
+                    }">
+            </button>
+            """;
+
+        await RunFormattingTestAsync(
+            input: code,
+            htmlFormatted: code,
+            expected: code,
+            additionalFiles: GetNewLineBeforeBraceInLambdaExpressionEditorConfig(newLineBeforeBraceInLambda: true),
+            fileKind: RazorFileKind.Component);
+    }
+
+    [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86440")]
+    public async Task FormatEventHandlerAttributes_BlockBodiedLambda3_DoesNotMoveWhenFormatted()
+    {
+        // The output of FormatEventHandlerAttributes_BlockBodiedLambda3, FormatEventHandlerAttributes_BlockBodiedLambda4
+        // and FormatEventHandlerAttributes_BlockBodiedLambda_BraceOnNextLine_NestedAttribute, formatted again
+        var code = """
+            <div>
+                <button foo="bar"
+                        @onclick="() =>
+                        {
+                            StateHasChanged();
+                        }">
+                </button>
+            </div>
+            """;
+
+        await RunFormattingTestAsync(
+            input: code,
+            htmlFormatted: code,
+            expected: code,
+            additionalFiles: GetNewLineBeforeBraceInLambdaExpressionEditorConfig(newLineBeforeBraceInLambda: true),
+            fileKind: RazorFileKind.Component);
+    }
+
+    [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86440")]
+    public async Task FormatEventHandlerAttributes_BlockBodiedLambda_ContinuationLine_DoesNotMoveWhenFormatted_IndentByOne()
+    {
+        var code = """
+            <div>
+                <span foo="bar"
+                    @onclick="() =>
+                    {
+                        StateHasChanged();
+                    }">
+                </span>
+            </div>
+            """;
+
+        await RunFormattingTestAsync(
+            input: code,
+            htmlFormatted: """
+                <div>
+                    <span foo="bar"
+                          @onclick="() =>
+                        {
+                            StateHasChanged();
+                        }">
+                    </span>
+                </div>
+                """,
+            expected: code,
+            attributeIndentStyle: AttributeIndentStyle.IndentByOne,
+            additionalFiles: GetNewLineBeforeBraceInLambdaExpressionEditorConfig(newLineBeforeBraceInLambda: true),
+            fileKind: RazorFileKind.Component);
+    }
+
+    [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86440")]
+    public async Task FormatEventHandlerAttributes_BlockBodiedLambda_ContinuationLine_DoesNotMoveWhenFormatted_IndentByTwo()
+    {
+        var code = """
+            <div>
+                <span foo="bar"
+                        @onclick="() =>
+                        {
+                            StateHasChanged();
+                        }">
+                </span>
+            </div>
+            """;
+
+        await RunFormattingTestAsync(
+            input: code,
+            htmlFormatted: """
+                <div>
+                    <span foo="bar"
+                          @onclick="() =>
+                            {
+                                StateHasChanged();
+                            }">
+                    </span>
+                </div>
+                """,
+            expected: code,
+            attributeIndentStyle: AttributeIndentStyle.IndentByTwo,
+            additionalFiles: GetNewLineBeforeBraceInLambdaExpressionEditorConfig(newLineBeforeBraceInLambda: true),
+            fileKind: RazorFileKind.Component);
+    }
+
+    [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86440")]
+    public async Task MultilineBlockBodiedLambdaInComponentAttribute_ContinuationLine_Nested_DoesNotMoveWhenFormatted()
+    {
+        var code = """
+            <div>
+                <div>
+                    <CheckBoxButton ImageContentSource="foo"
+                                    OnClick="() =>
+                                    {
+                                        Show(1);
+                                    }"
+                                    ImgSize=24 />
+                </div>
+            </div>
+            """;
+
+        await RunFormattingTestAsync(
+            input: code,
+            htmlFormatted: code,
+            expected: code,
+            fileKind: RazorFileKind.Component,
+            additionalFiles: GetCheckBoxButtonComponentFiles());
+    }
+
+    [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86440")]
+    public async Task MultilineLambdaExplicitExpressionInAttribute_ContinuationLine_ContentOnOwnLines_DoesNotMoveWhenFormatted()
+    {
+        var code = """
+            <div>
+                <div class="foo"
+                     style=@(() =>
+                     {
+                         Foo();
+                         Bar();
+                     }) title="bar">
+                    x
+                </div>
+            </div>
+            """;
+
+        await RunFormattingTestAsync(
+            input: code,
+            htmlFormatted: """
+                <div>
+                    <div class="foo"
+                         style=@(() =>
+                         {
+                         Foo();
+                         Bar();
+                         }) title="bar">
+                        x
+                    </div>
+                </div>
+                """,
+            expected: code,
+            fileKind: RazorFileKind.Component,
+            additionalFiles: GetNewLineBeforeBraceInLambdaExpressionEditorConfig(newLineBeforeBraceInLambda: true));
+    }
+
+    [Fact]
     [WorkItem("https://github.com/dotnet/razor/issues/13064")]
     public async Task RenderFragment_Multiline_ComponentAttributesWithExplicitExpression_IndentByOne()
     {
