@@ -15087,6 +15087,183 @@ public class DocumentFormattingTest(ITestOutputHelper testOutput) : DocumentForm
     }
 
     [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86399")]
+    public async Task MultilineAttributeValue_PreservesContents_MultilineExplicitExpression()
+    {
+        await RunFormattingTestAsync(
+            input: """
+                <div>
+                <p title="first
+                   @(1 +
+                     2)"
+                   id="q">z</p>
+                </div>
+                """,
+            htmlFormatted: """
+                <div>
+                    <p title="first
+                   @(1 +
+                     2)"
+                       id="q">z</p>
+                </div>
+                """,
+            expected: """
+                <div>
+                    <p title="first
+                   @(1 +
+                     2)"
+                       id="q">z</p>
+                </div>
+                """);
+    }
+
+    [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86399")]
+    public async Task MultilineAttributeValue_PreservesContents_MultilineImplicitExpression()
+    {
+        await RunFormattingTestAsync(
+            input: """
+                <div>
+                <p title="first
+                   @string.Concat("a",
+                          "b")"
+                   id="q">z</p>
+                </div>
+                """,
+            htmlFormatted: """
+                <div>
+                    <p title="first
+                   @string.Concat("a",
+                          "b")"
+                       id="q">z</p>
+                </div>
+                """,
+            expected: """
+                <div>
+                    <p title="first
+                   @string.Concat("a",
+                          "b")"
+                       id="q">z</p>
+                </div>
+                """);
+    }
+
+    [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86399")]
+    public async Task MultilineAttributeValue_PreservesContents_MultilineExpression_TextAfter()
+    {
+        await RunFormattingTestAsync(
+            input: """
+                <div>
+                <p title="first
+                   @(1 +
+                     2)
+                      last"
+                   id="q">z</p>
+                </div>
+                """,
+            htmlFormatted: """
+                <div>
+                    <p title="first
+                   @(1 +
+                     2)
+                      last"
+                       id="q">z</p>
+                </div>
+                """,
+            expected: """
+                <div>
+                    <p title="first
+                   @(1 +
+                     2)
+                      last"
+                       id="q">z</p>
+                </div>
+                """);
+    }
+
+    [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86399")]
+    public async Task MultilineAttributeValue_PreservesContents_MultilineExpression_Component()
+    {
+        await RunFormattingTestAsync(
+            input: """
+                <div>
+                <InputText Value="a
+                   @(1 +
+                     2)"
+                   title="b
+                   @string.Concat("a",
+                          "b")"
+                   id="q" />
+                </div>
+                """,
+            htmlFormatted: """
+                <div>
+                    <InputText Value="a
+                   @(1 +
+                     2)"
+                               title="b
+                   @string.Concat("a",
+                          "b")"
+                               id="q" />
+                </div>
+                """,
+            expected: """
+                <div>
+                    <InputText Value="a
+                   @(1 +
+                     2)"
+                               title="b
+                   @string.Concat("a",
+                          "b")"
+                               id="q" />
+                </div>
+                """);
+    }
+
+    [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/86399")]
+    public async Task MultilineAttributeValue_PreservesContents_MultilineExpression_Legacy()
+    {
+        await RunFormattingTestAsync(
+            input: """
+                <div>
+                <p title="first
+                   @(1 +
+                     2)"
+                   data-label="second
+                   @string.Concat("a",
+                          "b")"
+                   id="q">z</p>
+                </div>
+                """,
+            htmlFormatted: """
+                <div>
+                    <p title="first
+                   @(1 +
+                     2)"
+                       data-label="second
+                   @string.Concat("a",
+                          "b")"
+                       id="q">z</p>
+                </div>
+                """,
+            expected: """
+                <div>
+                    <p title="first
+                   @(1 +
+                     2)"
+                       data-label="second
+                   @string.Concat("a",
+                          "b")"
+                       id="q">z</p>
+                </div>
+                """,
+            fileKind: RazorFileKind.Legacy);
+    }
+
+    [Fact]
     [WorkItem("https://github.com/dotnet/roslyn/issues/86306")]
     public async Task MultilineLambdaInDirectiveAttribute_MovesWithTag()
     {

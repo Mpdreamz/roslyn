@@ -1252,6 +1252,20 @@ internal partial class CSharpFormattingPass
 
             private LineInfo VisitCSharpCodeBlock(RazorSyntaxNode node, CSharpCodeBlockSyntax csharpCode)
             {
+                if (IsQuotedAttributeValueContinuation(node))
+                {
+                    // This multi-line expression starts a line that continues a quoted attribute value, eg the second line of:
+                    //
+                    // <p title="first
+                    //    @(1 +
+                    //      2)"
+                    //
+                    // The leading whitespace of this line is part of the attribute value, and the lines after it are positioned
+                    // relative to it, so we leave all of them alone.
+                    _ignoreUntilLine = _sourceText.Lines.GetLineFromPosition(node.EndPosition).LineNumber;
+                    return EmitCurrentLineWithNoFormatting();
+                }
+
                 // If this spans multiple lines however, the indentation of this line will affect the next, so we handle it in the
                 // same way we handle a C# literal syntax. That includes checking if the C# doesn't go to the end of the line.
                 // If the whole explicit expression is C#, then the children will be a single CSharpExpressionLiteral. If not, there
